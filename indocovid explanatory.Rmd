@@ -1,0 +1,158 @@
+---
+title: "indocovid explanatory"
+output: html_document
+---
+
+```{r}
+library("plotly")
+library("lubridate")
+library("tidyr")
+```
+
+```{r}
+table1 <- read.csv("daily-tests-and-daily-new-confirmed-covid-cases.csv", stringsAsFactors = FALSE)
+```
+
+```{r}
+head(table1)
+```
+```{r}
+tests <- table1[table1$Entity == 'Indonesia' | table1$Entity == 'Singapore' | table1$Entity == 'Malaysia' | table1$Entity == 'India', c(1, 2, 3, 4) ]
+```
+
+```{r}
+#tests <- tests[,-2]
+tests
+```
+```{r}
+tests$Day <- ymd(tests$Day)
+```
+
+```{r}
+tests <- data.frame(tests$Day, tests$Entity, tests$new_tests_7day_smoothed)
+```
+```{r}
+colnames(tests) <- c("date","country", "new_tests_7days")
+```
+```{r}
+tests2 <- tests
+tests <- reshape(tests, idvar="date", timevar="country", direction="wide")
+```
+```{r}
+colnames(tests) <- c("date", "India", "Indonesia", "Malaysia", "Singapore")
+```
+```{r}
+fig <- plot_ly(tests, x = ~date, y = ~Indonesia, name = 'Indonesia', type = 'scatter', mode = 'lines')
+fig <- fig %>% add_trace(y = ~Singapore, name = 'Singapore', mode = 'lines')
+fig <- fig %>% add_trace(y = ~Malaysia, name = 'Malaysia', mode = 'lines')
+
+fig
+```
+```{r}
+accumulate_by <- function(dat, var) {
+  var <- lazyeval::f_eval(var, dat)
+  lvls <- plotly:::getLevels(var)
+  dats <- lapply(seq_along(lvls), function(x) {
+    cbind(dat[var %in% lvls[seq(1, x)], ], frame = lvls[[x]])
+  })
+  dplyr::bind_rows(dats)
+}
+
+df <- txhousing 
+fig <- df %>%
+  filter(year > 2005, city %in% c("Abilene", "Bay Area"))
+fig <- fig %>% accumulate_by(~date)
+
+```
+```{r}
+tests2 -> 
+
+```
+
+
+```{r}
+fig <- fig %>%
+  plot_ly(
+    x = ~date, 
+    y = ~median,
+    split = ~city,
+    frame = ~frame, 
+    type = 'scatter',
+    mode = 'lines', 
+    line = list(simplyfy = F)
+  )
+fig <- fig %>% layout(
+  xaxis = list(
+    title = "Date",
+    zeroline = F
+  ),
+  yaxis = list(
+    title = "Median",
+    zeroline = F
+  )
+)
+fig <- fig %>% animation_opts(
+  frame = 100,
+  transition = 0,
+  redraw = FALSE
+)
+fig <- fig %>% animation_slider(
+  hide = T
+)
+fig <- fig %>% animation_button(
+  x = 1, xanchor = "right", y = 0, yanchor = "bottom"
+)
+
+fig
+```
+```{r}
+tests
+```
+
+```{r}
+tests2
+tests2$country <- factor(tests2$country)
+#tests2$country <- as.character(tests2$country)
+levels(tests2$country)
+tests2 <- tests2[tests2$country!="India",]
+```
+```{r}
+fig2 <- tests2 %>%
+  plot_ly(
+    x = ~date, 
+    y = ~new_tests_7days,
+    split = ~country,
+    frame = ~date, 
+    type = 'scatter',
+    mode = 'lines', 
+    line = list(simplyfy = F)
+  )
+fig2 <- fig2 %>% layout(
+  xaxis = list(
+    title = "date",
+    zeroline = F
+  ),
+  yaxis = list(
+    title = "new cases",
+    zeroline = F
+  )
+)
+fig2
+```
+```{r}
+
+fig <- fig %>% animation_opts(
+  frame = 100,
+  transition = 0,
+  redraw = FALSE
+)
+fig <- fig %>% animation_slider(
+  hide = T
+)
+fig <- fig %>% animation_button(
+  x = 1, xanchor = "right", y = 0, yanchor = "bottom"
+)
+
+fig
+
+```
